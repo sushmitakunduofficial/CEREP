@@ -1,0 +1,28 @@
+{
+  "theme": "CEREP Research Dark",
+  "colors": {
+    "background": "#0F1117",
+    "card": "#1A1F2B",
+    "primary": "#5B8CFF",
+    "accent": "#7F5BFF",
+    "success": "#00C48C",
+    "warning": "#FFB020",
+    "error": "#FF5A5F",
+    "textPrimary": "#F5F7FA",
+    "textSecondary": "#AAB2C8",
+    "border": "rgba(255,255,255,0.08)"
+  },
+  "typography": {
+    "fontFamily": "Inter",
+    "headingWeight": 600,
+    "bodyWeight": 400,
+    "mono": "JetBrains Mono"
+  },
+  "radius": "14px",
+  "shadow": "0px 10px 30px rgba(0,0,0,0.35)",
+  "graph": {
+    "node": "#5B8CFF",
+    "highlight": "#00D4FF",
+    "edge": "rgba(255,255,255,0.2)"
+  }
+}

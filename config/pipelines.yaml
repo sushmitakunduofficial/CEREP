@@ -1,0 +1,36 @@
+# CEREP Pipeline Configuration
+# Controls which data processors are active and how data is normalised.
+
+processors:
+  mutation:
+    enabled: true
+    supported_formats: ["maf", "csv"]
+    variant_classification_filter:
+      - "Missense_Mutation"
+      - "Nonsense_Mutation"
+      - "Frame_Shift_Del"
+      - "Frame_Shift_Ins"
+      - "Splice_Site"
+      - "In_Frame_Del"
+      - "In_Frame_Ins"
+    min_vaf: 0.05
+
+  expression:
+    enabled: true
+    normalization: "log2_zscore"   # options: log2, zscore, log2_zscore, none
+    top_n_genes: 100               # top differentially expressed genes to keep
+    min_expression_threshold: 1.0
+
+  proteomics:
+    enabled: true
+    gene_mapping: "hgnc"           # protein → gene mapping source
+    min_intensity: 0.0
+
+gene_normalizer:
+  # Aliases resolved by GeneNormalizer (from internal KG alias table)
+  case_insensitive: true
+  fuzzy_match: false
+
+output:
+  include_raw_data: false
+  include_normalization_stats: true

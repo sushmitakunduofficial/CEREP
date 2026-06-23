@@ -1,0 +1,159 @@
+# ══════════════════════════════════════════════════════════════════════════════
+# CEREP BioCypher Schema Configuration
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Declarative mapping from adapter outputs to Biolink Model categories.
+# Governs how disparate identifiers are merged into unique graph nodes.
+#
+# Reference: https://biolink.github.io/biolink-model/
+# ══════════════════════════════════════════════════════════════════════════════
+
+schema_version: "2.0"
+biolink_version: "4.2.0"
+
+# ── Node Categories ──────────────────────────────────────────────────────────
+nodes:
+  gene:
+    biolink_category: "biolink:Gene"
+    id_prefixes: ["HGNC", "NCBI", "ENSEMBL"]
+    primary_key: "hugo_symbol"       # HUGO gene symbol is the canonical key
+    merge_strategy: "union_aliases"  # merge aliases from all adapters
+    adapters: ["reactome", "string", "gene_ontology", "open_targets"]
+
+  protein:
+    biolink_category: "biolink:Protein"
+    id_prefixes: ["UniProt", "Ensembl"]
+    primary_key: "uniprot_accession"
+    merge_strategy: "union_aliases"
+    adapters: ["reactome", "string"]
+
+  sequence_variant:
+    biolink_category: "biolink:SequenceVariant"
+    id_prefixes: ["ClinVar", "COSMIC", "dbSNP"]
+    primary_key: "hgvs_notation"
+    adapters: ["clinvar", "cosmic"]
+
+  pathway:
+    biolink_category: "biolink:Pathway"
+    id_prefixes: ["Reactome", "KEGG", "WikiPathways"]
+    primary_key: "reactome_id"
+    adapters: ["reactome"]
+
+  biological_process:
+    biolink_category: "biolink:BiologicalProcess"
+    id_prefixes: ["GO"]
+    primary_key: "go_id"
+    adapters: ["gene_ontology"]
+
+  disease:
+    biolink_category: "biolink:Disease"
+    id_prefixes: ["MONDO", "DOID", "OMIM"]
+    primary_key: "mondo_id"
+    adapters: ["reactome", "open_targets"]
+
+  drug:
+    biolink_category: "biolink:Drug"
+    id_prefixes: ["ChEMBL", "DrugBank"]
+    primary_key: "chembl_id"
+    adapters: ["reactome", "open_targets"]
+
+  phenotypic_feature:
+    biolink_category: "biolink:PhenotypicFeature"
+    id_prefixes: ["HPO"]
+    primary_key: "hpo_id"
+    adapters: []
+
+# ── Edge Predicates ──────────────────────────────────────────────────────────
+edges:
+  regulatory:
+    - predicate: "biolink:positively_regulates"
+      adapters: ["reactome"]
+      required_provenance: true
+    - predicate: "biolink:negatively_regulates"
+      adapters: ["reactome"]
+      required_provenance: true
+    - predicate: "biolink:regulates"
+      adapters: ["reactome"]
+
+  interaction:
+    - predicate: "biolink:physically_interacts_with"
+      adapters: ["string"]
+      min_score: 700                 # STRING combined_score threshold
+    - predicate: "biolink:interacts_with"
+      adapters: ["string"]
+
+  functional:
+    - predicate: "biolink:participates_in"
+      adapters: ["reactome", "gene_ontology"]
+    - predicate: "biolink:enables"
+      adapters: ["gene_ontology"]
+    - predicate: "biolink:phosphorylates"
+      adapters: ["reactome"]
+
+  clinical:
+    - predicate: "biolink:gene_associated_with_condition"
+      adapters: ["reactome", "open_targets"]
+      required_provenance: true
+    - predicate: "biolink:targets"
+      adapters: ["reactome", "open_targets"]
+    - predicate: "biolink:treats"
+      adapters: ["open_targets"]
+
+  expression:
+    - predicate: "biolink:expressed_in"
+      adapters: ["reactome"]
+
+  sequence:
+    - predicate: "biolink:is_sequence_variant_of"
+      adapters: ["clinvar", "cosmic"]
+
+# ── Edge Qualifiers ──────────────────────────────────────────────────────────
+qualifiers:
+  direction:
+    enum: ["UP_REGULATED", "DOWN_REGULATED", "ACTIVATED", "INHIBITED", "INCREASED", "DECREASED"]
+    applies_to: ["regulatory", "functional"]
+
+  causal_mechanism:
+    enum: ["gain_of_function", "loss_of_function", "dominant_negative", "haploinsufficiency",
+           "overexpression", "amplification", "deletion", "fusion"]
+    applies_to: ["clinical"]
+
+# ── Provenance Requirements ──────────────────────────────────────────────────
+provenance:
+  required_fields: ["source_database", "evidence_level"]
+  optional_fields: ["pmids", "publications", "retrieval_source", "last_updated"]
+  evidence_levels: ["experimental", "clinical", "curated", "literature", "computational", "inferred"]
+
+# ── Adapter Configuration ────────────────────────────────────────────────────
+adapters:
+  reactome:
+    enabled: true
+    version: "87"
+    priority: 1          # highest priority for merge conflicts
+
+  string:
+    enabled: true
+    version: "12.0"
+    min_combined_score: 700
+    priority: 2
+
+  gene_ontology:
+    enabled: true
+    version: "2024-01"
+    evidence_codes: ["EXP", "IDA", "IPI", "IMP", "IGI", "IEP", "TAS", "IC"]
+    priority: 3
+
+  open_targets:
+    enabled: true
+    version: "24.09"
+    min_overall_score: 0.5
+    priority: 4
+
+# ── Graph Export ─────────────────────────────────────────────────────────────
+export:
+  default_store: "networkx"          # networkx | neo4j
+  neo4j:
+    uri: "bolt://localhost:7687"
+    user: "neo4j"
+    database: "cerep"
+  cache_path: "backend/graph/graph_cache.json"

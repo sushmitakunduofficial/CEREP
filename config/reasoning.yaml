@@ -1,0 +1,31 @@
+# CEREP Reasoning Configuration
+# Controls LLM behaviour and KG-constrained decoding parameters.
+
+llm:
+  model: "llama3:8b" # Ollama model tag
+  base_url: "http://localhost:11434" # Ollama server URL
+  temperature: 0.1 # lower = more deterministic
+  max_tokens: 1024
+  timeout_seconds: 120
+  max_retries: 2
+
+knowledge_graph:
+  mode: "networkx" # backend: networkx (local) | neo4j (future)
+  max_hops: 4 # maximum path length for BFS/DFS extraction
+  top_k_paths: 10 # top-k paths per gene query
+  path_scoring:
+    weight_evidence: 0.4 # weight for evidence-score component
+    weight_path_length: 0.3 # shorter paths score higher
+    weight_node_degree: 0.3 # highly connected nodes score higher
+
+constraint:
+  mode: "trie" # KG-Trie constraint layer
+  inject_context: true # inject KG context into LLM prompt
+  max_context_paths: 8 # max paths to include in prompt
+
+hallucination:
+  check_enabled: true
+  entity_extraction_pattern: "\\b([A-Z][A-Z0-9\\-_]{1,})\\b"
+
+evaluation:
+  ablation_conditions: ["no_kg", "kg_paths_only", "full_cerep"]
